@@ -54,8 +54,12 @@ function Analytics() {
        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
        const fullTrends = months.map((m, index) => {
          const monthIndex = index + 1;
-         const found = (trendRes.data || []).find(d => d._id === monthIndex);
-         return { name: m, total: found ? found.total : 0 };
+         const found = (trendRes.data || []).find(d => d.month === monthIndex);
+         return { 
+           name: m, 
+           income: found ? found.income : 0,
+           expense: found ? found.expense : 0
+         };
        });
 
        setTrendData(fullTrends);
@@ -203,28 +207,39 @@ function Analytics() {
             
             <div className="h-[320px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={trendData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                <XAxis dataKey="name" stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} />
-                <YAxis 
-                  stroke="#94a3b8" 
-                  fontSize={10} 
-                  tickLine={false} 
-                  axisLine={false}
-                  tickFormatter={(value) => `₹${(value/1000).toFixed(1)}k`}
-                />
-                <Tooltip 
-                  contentStyle={{ background: 'var(--surface)', border: '1px solid var(--glass-border)', borderRadius: '12px', color: 'var(--text)' }}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="total" 
-                  stroke="#ec4899" 
-                  strokeWidth={5} 
-                  dot={{ r: 4, fill: '#ec4899', strokeWidth: 0 }} 
-                  activeDot={{ r: 8, strokeWidth: 0 }} 
-                />
-              </LineChart>
+               <LineChart data={trendData}>
+                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                 <XAxis dataKey="name" stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} />
+                 <YAxis 
+                   stroke="#94a3b8" 
+                   fontSize={10} 
+                   tickLine={false} 
+                   axisLine={false}
+                   tickFormatter={(value) => `₹${(value/1000).toFixed(1)}k`}
+                 />
+                 <Tooltip 
+                   contentStyle={{ background: 'var(--surface)', border: '1px solid var(--glass-border)', borderRadius: '12px', color: 'var(--text)' }}
+                 />
+                 <Legend verticalAlign="top" align="right" iconType="circle" />
+                 <Line 
+                   name="Income"
+                   type="monotone" 
+                   dataKey="income" 
+                   stroke="#10b981" 
+                   strokeWidth={4} 
+                   dot={{ r: 4, fill: '#10b981', strokeWidth: 0 }} 
+                   activeDot={{ r: 8, strokeWidth: 0 }} 
+                 />
+                 <Line 
+                   name="Expense"
+                   type="monotone" 
+                   dataKey="expense" 
+                   stroke="#ef4444" 
+                   strokeWidth={4} 
+                   dot={{ r: 4, fill: '#ef4444', strokeWidth: 0 }} 
+                   activeDot={{ r: 8, strokeWidth: 0 }} 
+                 />
+               </LineChart>
             </ResponsiveContainer>
             </div>
           </div>

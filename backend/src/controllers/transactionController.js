@@ -1,9 +1,22 @@
 const Transaction = require("../models/Transaction");
 
-// ➕ Create Transaction
 exports.createTransaction = async (req, res) => {
   try {
     const { amount, type, category, date, notes } = req.body;
+
+    // --- INPUT VALIDATION ---
+    if (!amount || !type || !category || !date) {
+       return res.status(400).json({ message: "All fields are required (amount, type, category, date)" });
+    }
+
+    if (amount <= 0) {
+       return res.status(400).json({ message: "Amount must be greater than zero" });
+    }
+
+    if (!["income", "expense"].includes(type)) {
+       return res.status(400).json({ message: "Invalid type. Must be 'income' or 'expense'" });
+    }
+    // ------------------------
 
     const transaction = await Transaction.create({
       amount,
@@ -16,14 +29,16 @@ exports.createTransaction = async (req, res) => {
 
     res.status(201).json(transaction);
   } catch (error) {
+    if (error.name === "ValidationError") {
+       return res.status(400).json({ message: error.message });
+    }
     res.status(500).json({ message: error.message });
   }
 };
 
-// 📄 Get All Transactions (with filters)
 exports.getTransactions = async (req, res) => {
   try {
-    const { type, category, startDate, endDate } = req.query;
+    const { type, category, startDate, endDate, search, page = 1, limit = 10 } = req.query;
 
     let filter = {};
 
@@ -37,9 +52,28 @@ exports.getTransactions = async (req, res) => {
       };
     }
 
-    const transactions = await Transaction.find(filter).sort({ date: -1 }).populate("user", "name email");
+    if (search) {
+      filter.$or = [
+        { notes: { $regex: search, $options: "i" } },
+        { category: { $regex: search, $options: "i" } }
+      ];
+    }
 
-    res.json(transactions);
+    const skipIdx = (page - 1) * limit;
+
+    const total = await Transaction.countDocuments(filter);
+    const transactions = await Transaction.find(filter)
+      .sort({ date: -1 })
+      .skip(skipIdx)
+      .limit(parseInt(limit))
+      .populate("user", "name email");
+
+    res.json({
+      transactions,
+      page: parseInt(page),
+      pages: Math.ceil(total / limit),
+      total
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

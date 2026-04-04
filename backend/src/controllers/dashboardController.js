@@ -89,15 +89,28 @@ exports.getMonthlyTrends = async (req, res) => {
     
     pipeline.push({
       $group: {
-        _id: { $month: "$date" },
+        _id: { 
+           month: { $month: "$date" },
+           type: "$type" 
+        },
         total: { $sum: "$amount" },
       },
     });
     
-    pipeline.push({ $sort: { "_id": 1 } });
+    pipeline.push({ $sort: { "_id.month": 1 } });
 
-    const data = await Transaction.aggregate(pipeline);
-    res.json(data);
+    const rawData = await Transaction.aggregate(pipeline);
+
+    // Format for easier frontend use: { month: 1, income: 100, expense: 50 }
+    const months = {};
+    rawData.forEach(item => {
+      const m = item._id.month;
+      if (!months[m]) months[m] = { month: m, income: 0, expense: 0 };
+      if (item._id.type === "income") months[m].income = item.total;
+      if (item._id.type === "expense") months[m].expense = item.total;
+    });
+
+    res.json(Object.values(months));
 
   } catch (error) {
     res.status(500).json({ message: error.message });

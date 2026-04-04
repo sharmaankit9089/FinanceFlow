@@ -4,6 +4,9 @@ import API from "../services/api";
 function Transactions() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     amount: "",
@@ -20,8 +23,11 @@ function Transactions() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await API.get("/transactions");
-      setData(res.data);
+      const res = await API.get("/transactions", { 
+        params: { search, page, limit: 8 } 
+      });
+      setData(res.data.transactions || []);
+      setTotalPages(res.data.pages || 1);
     } catch (err) {
       console.error(err);
     }
@@ -30,7 +36,7 @@ function Transactions() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [page, search]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -91,6 +97,23 @@ function Transactions() {
           </p>
         </div>
         
+        {/* Search Bar */}
+        <div className="flex-1 max-w-sm mx-8">
+           <div className="relative">
+             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-dim">🔍</span>
+             <input 
+               type="text" 
+               placeholder="Search notes or category..."
+               className="input-field pl-10 py-3 text-sm"
+               value={search}
+               onChange={(e) => {
+                 setSearch(e.target.value);
+                 setPage(1); // Reset to page 1 on new search
+               }}
+             />
+           </div>
+        </div>
+
         {isAdmin && (
           <button
             onClick={() => {
@@ -169,6 +192,29 @@ function Transactions() {
             No transactions found.
           </div>
         )}
+
+        {/* Pagination Controls */}
+        <div className="p-4 bg-white/5 border-t border-white/10 flex items-center justify-between">
+           <div className="text-xs text-text-dim font-bold uppercase tracking-widest">
+              Page {page} of {totalPages}
+           </div>
+           <div className="flex space-x-2">
+              <button 
+                disabled={page <= 1}
+                onClick={() => setPage(p => p - 1)}
+                className={`px-4 py-2 rounded-lg text-xs font-bold border border-white/10 transition-all ${page <= 1 ? "opacity-30 cursor-not-allowed" : "hover:bg-white/10 text-white"}`}
+              >
+                Previous
+              </button>
+              <button 
+                disabled={page >= totalPages}
+                onClick={() => setPage(p => p + 1)}
+                className={`px-4 py-2 rounded-lg text-xs font-bold border border-white/10 transition-all ${page >= totalPages ? "opacity-30 cursor-not-allowed" : "hover:bg-white/10 text-white"}`}
+              >
+                Next
+              </button>
+           </div>
+        </div>
       </div>
 
       {/* Modal */}
