@@ -38,7 +38,17 @@ exports.createTransaction = async (req, res) => {
 
 exports.getTransactions = async (req, res) => {
   try {
-    const { type, category, startDate, endDate, search, page = 1, limit = 10 } = req.query;
+    const { 
+      type, 
+      category, 
+      startDate, 
+      endDate, 
+      search, 
+      sortBy = "date", 
+      order = -1, 
+      page = 1, 
+      limit = 10 
+    } = req.query;
 
     let filter = {};
 
@@ -63,7 +73,7 @@ exports.getTransactions = async (req, res) => {
 
     const total = await Transaction.countDocuments(filter);
     const transactions = await Transaction.find(filter)
-      .sort({ date: -1 })
+      .sort({ [sortBy]: parseInt(order) })
       .skip(skipIdx)
       .limit(parseInt(limit))
       .populate("user", "name email");
@@ -88,8 +98,6 @@ exports.updateTransaction = async (req, res) => {
       return res.status(404).json({ message: "Transaction not found" });
     }
 
-    // only admin can update (checked in routes)
-
     const updated = await Transaction.findByIdAndUpdate(
       req.params.id,
       req.body,
@@ -110,8 +118,6 @@ exports.deleteTransaction = async (req, res) => {
     if (!transaction) {
       return res.status(404).json({ message: "Transaction not found" });
     }
-
-    // route middleware ensures only admin reaches here
 
     await transaction.deleteOne();
 

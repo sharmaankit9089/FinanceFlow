@@ -27,6 +27,7 @@ function Navbar() {
         </h1>
         
         <div className="flex items-center space-x-2">
+          {/* Dashboard is for Everyone */}
           <Link 
             to="/dashboard" 
             className={`nav-link ${location.pathname === "/dashboard" ? "active text-white bg-white/10" : "text-text-dim"}`}
@@ -34,13 +35,17 @@ function Navbar() {
              Dashboard
           </Link>
           
-          <Link 
-            to="/transactions" 
-            className={`nav-link ${location.pathname === "/transactions" ? "active text-white bg-white/10" : "text-text-dim"}`}
-          >
-            Transactions
-          </Link>
+          {/* Transactions/Records is for Analyst and Admin only */}
+          {(isAnalyst || isAdmin) && (
+            <Link 
+              to="/transactions" 
+              className={`nav-link ${location.pathname === "/transactions" ? "active text-white bg-white/10" : "text-text-dim"}`}
+            >
+              Transactions
+            </Link>
+          )}
 
+          {/* Analytics (Insights) is for Analyst and Admin only */}
           {(isAnalyst || isAdmin) && (
             <Link 
               to="/analytics" 
@@ -50,6 +55,7 @@ function Navbar() {
             </Link>
           )}
 
+          {/* User Management is for Admin only */}
           {isAdmin && (
             <Link 
               to="/users" 
@@ -59,6 +65,7 @@ function Navbar() {
             </Link>
           )}
 
+          {/* Settings is for Admin only */}
           {isAdmin && (
             <Link 
               to="/settings" 
@@ -71,9 +78,9 @@ function Navbar() {
       </div>
 
       <div className="flex items-center space-x-6">
-        {/* Profile Circle with Role below */}
+        {/* Profile Circle - Ultra Light Blue with Highlighted Border */}
         <div className="flex flex-col items-center">
-          <div className="h-10 w-10 rounded-full bg-indigo-500/10 border-2 border-indigo-500/50 flex items-center justify-center text-indigo-500 font-black text-xl shadow-inner transform transition-transform hover:scale-110 cursor-default">
+          <div className="h-10 w-10 rounded-full bg-blue-500/5 border-2 border-blue-400 flex items-center justify-center text-blue-500 font-black text-xl shadow-[0_0_15px_rgba(56,189,248,0.2)] transform transition-transform hover:scale-110 cursor-default">
             {user.name?.charAt(0).toUpperCase()}
           </div>
           <span className={`text-[8px] uppercase font-black tracking-widest mt-1 px-1.5 py-0.5 rounded border ${isAdmin ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' : isAnalyst ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 'bg-slate-500/10 text-slate-400 border-slate-500/20'}`}>

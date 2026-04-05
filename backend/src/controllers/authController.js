@@ -42,6 +42,11 @@ exports.login = async (req, res) => {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
+    // Role-Based Status Enforcement
+    if (user.status !== "active") {
+      return res.status(403).json({ message: "Access Denied: Account is currently inactive. Contact your administrator." });
+    }
+
     const token = jwt.sign(
       { id: user._id, role: user.role },
       process.env.JWT_SECRET,

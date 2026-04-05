@@ -4,9 +4,16 @@ import API from "../services/api";
 function Transactions() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // Search & Filter State
   const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
+  const [sortBy, setSortBy] = useState("date");
+  const [order, setOrder] = useState(-1); // -1 for desc, 1 for asc
+  
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     amount: "",
@@ -24,19 +31,36 @@ function Transactions() {
     setLoading(true);
     try {
       const res = await API.get("/transactions", { 
-        params: { search, page, limit: 8 } 
+        params: { 
+          search, 
+          type: typeFilter, 
+          sortBy, 
+          order,
+          page, 
+          limit: 8 
+        } 
       });
       setData(res.data.transactions || []);
       setTotalPages(res.data.pages || 1);
     } catch (err) {
-      console.error(err);
+      console.error("Fetch records failed", err);
     }
     setLoading(false);
   };
 
   useEffect(() => {
     fetchData();
-  }, [page, search]);
+  }, [page, search, typeFilter, sortBy, order]);
+
+  const handleSort = (key) => {
+    if (sortBy === key) {
+      setOrder(order === -1 ? 1 : -1);
+    } else {
+      setSortBy(key);
+      setOrder(-1);
+    }
+    setPage(1);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -68,7 +92,7 @@ function Transactions() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this record?")) return;
+    if (!window.confirm("Are you sure?")) return;
     try {
       await API.delete(`/transactions/${id}`);
       fetchData();
@@ -77,55 +101,66 @@ function Transactions() {
     }
   };
 
-  if (loading && data.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
   return (
-    <div className="p-8 max-w-7xl mx-auto animate-fade-in">
-      <div className="flex justify-between items-end mb-10">
-        <div>
-          <h1 className="text-4xl font-bold text-white mb-2">
-            {isAdmin ? "Financial Records" : "View Records"}
-          </h1>
-          <p className="text-text-dim text-sm font-medium">
-            {isAdmin ? "Detailed ledger of all financial activity" : "Read-only access to transaction history"}
-          </p>
+    <div className="p-8 max-w-7xl mx-auto animate-fade-in space-y-10">
+      
+      {/* Header & Controls */}
+      <div className="space-y-8">
+        <div className="flex justify-between items-end">
+          <div>
+            <h1 className="text-4xl font-black text-white tracking-tighter">Financial Records 📖</h1>
+            <p className="text-text-dim text-sm mt-1">{isAdmin ? "Complete administrative ledger control" : "Read-only access to transaction history"}</p>
+          </div>
+          
+          {isAdmin && (
+            <button
+              onClick={() => {
+                setEditingId(null);
+                setFormData({ amount: "", type: "expense", category: "", date: new Date().toISOString().split('T')[0], notes: "" });
+                setIsModalOpen(true);
+              }}
+              className="btn-primary"
+            >
+              + Create Record
+            </button>
+          )}
         </div>
-        
-        {/* Search Bar */}
-        <div className="flex-1 max-w-sm mx-8">
-           <div className="relative">
-             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-dim">🔍</span>
-             <input 
-               type="text" 
-               placeholder="Search notes or category..."
-               className="input-field pl-10 py-3 text-sm"
-               value={search}
-               onChange={(e) => {
-                 setSearch(e.target.value);
-                 setPage(1); // Reset to page 1 on new search
-               }}
-             />
+
+        {/* Search & Filter Bar */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+           {/* Search */}
+           <div className="md:col-span-6 relative">
+              <input 
+                type="text" 
+                placeholder="Search notes or category..."
+                className="input-field px-4 h-14 text-sm"
+                value={search}
+                onChange={(e) => {setSearch(e.target.value); setPage(1);}}
+              />
+           </div>
+
+           {/* Filter Type */}
+           <div className="md:col-span-3">
+              <select 
+                className="input-field h-14 text-sm px-4"
+                value={typeFilter}
+                onChange={(e) => {setTypeFilter(e.target.value); setPage(1);}}
+              >
+                <option value="">All Transactions</option>
+                <option value="income">Credits (Income)</option>
+                <option value="expense">Debits (Expense)</option>
+              </select>
+           </div>
+
+           {/* Sort Toggle is in headers, so this space can be used for secondary filters or left clean */}
+           <div className="md:col-span-3">
+             <div className="h-14 flex items-center justify-end px-2">
+                <span className="text-[10px] text-text-dim uppercase font-black tracking-widest bg-white/5 px-4 py-2 rounded-lg border border-white/10">
+                  {data.length} Records Found
+                </span>
+             </div>
            </div>
         </div>
-
-        {isAdmin && (
-          <button
-            onClick={() => {
-              setEditingId(null);
-              setFormData({ amount: "", type: "expense", category: "", date: new Date().toISOString().split('T')[0], notes: "" });
-              setIsModalOpen(true);
-            }}
-            className="btn-primary"
-          >
-            + Add Transaction
-          </button>
-        )}
       </div>
 
       <div className="glass-card overflow-hidden">
@@ -133,51 +168,75 @@ function Transactions() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-white/5 border-b border-white/10">
-                <th className="p-4 text-text-dim font-medium text-sm">DATE</th>
-                <th className="p-4 text-text-dim font-medium text-sm">CATEGORY</th>
-                <th className="p-4 text-text-dim font-medium text-sm">TYPE</th>
-                <th className="p-4 text-text-dim font-medium text-sm text-right">AMOUNT</th>
-                <th className="p-4 text-text-dim font-medium text-sm">POSTED BY</th>
-                {isAdmin && <th className="p-4 text-text-dim font-medium text-sm text-center">ACTIONS</th>}
+                <th 
+                  className="p-5 text-text-dim font-black text-[10px] tracking-widest uppercase cursor-pointer hover:text-white transition-all group"
+                  onClick={() => handleSort('date')}
+                >
+                  <div className="flex items-center space-x-1">
+                    <span>DATE</span>
+                    {sortBy === 'date' && (<span>{order === -1 ? '↓' : '↑'}</span>)}
+                  </div>
+                </th>
+                <th 
+                  className="p-5 text-text-dim font-black text-[10px] tracking-widest uppercase cursor-pointer hover:text-white transition-all"
+                  onClick={() => handleSort('category')}
+                >
+                  <div className="flex items-center space-x-1">
+                    <span>CATEGORY</span>
+                    {sortBy === 'category' && (<span>{order === -1 ? '↓' : '↑'}</span>)}
+                  </div>
+                </th>
+                <th className="p-5 text-text-dim font-black text-[10px] tracking-widest uppercase">TYPE</th>
+                <th 
+                  className="p-5 text-text-dim font-black text-[10px] tracking-widest uppercase cursor-pointer hover:text-white transition-all text-right"
+                  onClick={() => handleSort('amount')}
+                >
+                   <div className="flex items-center justify-end space-x-1">
+                    <span>AMOUNT</span>
+                    {sortBy === 'amount' && (<span>{order === -1 ? '↓' : '↑'}</span>)}
+                  </div>
+                </th>
+                <th className="p-5 text-text-dim font-black text-[10px] tracking-widest uppercase">POSTED BY</th>
+                {isAdmin && <th className="p-5 text-text-dim font-black text-[10px] tracking-widest uppercase text-center">ACTIONS</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
               {data.map((t) => (
-                <tr key={t._id} className="hover:bg-white/[0.02] transition-colors">
-                  <td className="p-4 text-sm text-white">
-                    {t.date ? new Date(t.date).toLocaleDateString() : "N/A"}
+                <tr key={t._id} className="hover:bg-white/[0.03] transition-colors group">
+                  <td className="p-5 text-sm text-white">
+                    {t.date ? new Date(t.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : "--"}
                   </td>
-                  <td className="p-4">
-                    <span className="p-1 px-3 rounded-full bg-white/5 text-xs text-white border border-white/10">
+                  <td className="p-5">
+                    <span className="p-1.5 px-4 rounded-lg bg-indigo-500/5 text-xs text-indigo-400 font-bold border border-indigo-500/10">
                       {t.category}
                     </span>
                   </td>
-                  <td className="p-4">
-                    <span className={`text-sm font-medium ${t.type === 'income' ? 'text-green-400' : 'text-red-400'} capitalize`}>
-                      {t.type}
+                  <td className="p-5">
+                    <span className={`text-[10px] font-black uppercase px-2 py-1 rounded inline-flex items-center space-x-1 ${t.type === 'income' ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
+                      {t.type === 'income' ? 'CREDIT' : 'DEBIT'}
                     </span>
                   </td>
-                  <td className="p-4 text-sm font-bold text-white text-right">
+                  <td className={`p-5 text-sm font-black text-right ${t.type === 'income' ? 'text-green-500' : 'text-white'}`}>
                     ₹{t.amount?.toLocaleString()}
                   </td>
-                  <td className="p-4">
-                    <div className="text-sm text-white">{t.user?.name || 'System'}</div>
-                    <div className="text-xs text-text-dim">{t.user?.email}</div>
+                  <td className="p-5">
+                    <div className="text-sm font-bold text-white">{t.user?.name || 'Admin'}</div>
+                    <div className="text-[10px] text-text-dim uppercase font-bold">{t.user?.email}</div>
                   </td>
                   {isAdmin && (
-                    <td className="p-4 text-center">
-                      <div className="flex items-center justify-center space-x-2">
+                    <td className="p-5 text-center">
+                      <div className="flex items-center justify-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button 
                           onClick={() => handleEdit(t)}
-                          className="p-2 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500 hover:text-white transition-all text-xs"
+                          className="p-2 bg-white/5 hover:bg-indigo-500 hover:text-white rounded-lg border border-white/10 transition-all text-[10px] font-bold uppercase"
                         >
                           Edit
                         </button>
                         <button 
                           onClick={() => handleDelete(t._id)}
-                          className="p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition-all text-xs"
+                          className="p-2 bg-red-500/10 hover:bg-red-500 hover:text-white rounded-lg border border-red-500/10 transition-all text-[10px] font-bold uppercase text-red-500"
                         >
-                          Delete
+                          Drop
                         </button>
                       </div>
                     </td>
@@ -187,117 +246,123 @@ function Transactions() {
             </tbody>
           </table>
         </div>
+        
         {data.length === 0 && !loading && (
-          <div className="p-12 text-center text-text-dim">
-            No transactions found.
+          <div className="p-20 text-center text-text-dim border-t border-white/5">
+             <div className="text-4xl mb-4">🔍</div>
+             <p className="font-black text-xs uppercase tracking-widest">No detailed records found match your criteria</p>
           </div>
         )}
 
-        {/* Pagination Controls */}
-        <div className="p-4 bg-white/5 border-t border-white/10 flex items-center justify-between">
-           <div className="text-xs text-text-dim font-bold uppercase tracking-widest">
-              Page {page} of {totalPages}
+        {/* Bottom Pagination */}
+        <div className="p-5 bg-white/[0.02] border-t border-white/5 flex items-center justify-between">
+           <div className="text-[10px] text-text-dim font-black uppercase tracking-widest">
+              Ledger Page {page} of {totalPages}
            </div>
-           <div className="flex space-x-2">
+           <div className="flex space-x-3">
               <button 
                 disabled={page <= 1}
                 onClick={() => setPage(p => p - 1)}
-                className={`px-4 py-2 rounded-lg text-xs font-bold border border-white/10 transition-all ${page <= 1 ? "opacity-30 cursor-not-allowed" : "hover:bg-white/10 text-white"}`}
+                className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border border-white/10 transition-all ${page <= 1 ? "opacity-20 cursor-not-allowed grayscale" : "hover:bg-white text-slate-900 bg-white/5 text-white"}`}
               >
                 Previous
               </button>
               <button 
                 disabled={page >= totalPages}
                 onClick={() => setPage(p => p + 1)}
-                className={`px-4 py-2 rounded-lg text-xs font-bold border border-white/10 transition-all ${page >= totalPages ? "opacity-30 cursor-not-allowed" : "hover:bg-white/10 text-white"}`}
+                className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border border-white/10 transition-all ${page >= totalPages ? "opacity-20 cursor-not-allowed grayscale" : "hover:bg-white text-slate-900 bg-white/5 text-white"}`}
               >
-                Next
+                Next Ledger
               </button>
            </div>
         </div>
       </div>
 
-      {/* Modal */}
+      {/* Modal - Modernized */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm">
-          <div className="glass-card p-8 w-full max-w-md animate-fade-in shadow-2xl relative border-white/20">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-950/80 backdrop-blur-md">
+          <div className="glass-card p-10 w-full max-w-lg animate-in zoom-in-95 duration-200 relative border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)]">
             <button 
               onClick={() => setIsModalOpen(false)}
-              className="absolute top-4 right-4 text-text-dim hover:text-white"
+              className="absolute top-6 right-6 h-8 w-8 rounded-full flex items-center justify-center bg-white/5 hover:bg-red-500/20 text-text-dim hover:text-red-500 transition-all font-bold"
             >
               ✕
             </button>
             
-            <h2 className="text-2xl font-bold text-white mb-6">
-              {editingId ? "Edit Transaction" : "New Transaction"}
+            <h2 className="text-3xl font-black text-white tracking-tighter mb-8">
+              {editingId ? "Update Transaction" : "Register Transaction"}
             </h2>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm text-text-dim mb-1">Amount</label>
-                <input
-                  type="number"
-                  className="input-field"
-                  value={formData.amount}
-                  onChange={(e) => setFormData({...formData, amount: e.target.value})}
-                  required
-                />
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid grid-cols-2 gap-6">
+                 <div>
+                    <label className="text-[10px] font-black text-text-dim uppercase tracking-widest ml-1 mb-2 block">Value (₹)</label>
+                    <input
+                      type="number"
+                      className="input-field h-14"
+                      value={formData.amount}
+                      onChange={(e) => setFormData({...formData, amount: e.target.value})}
+                      placeholder="0.00"
+                      required
+                    />
+                 </div>
+                 <div>
+                    <label className="text-[10px] font-black text-text-dim uppercase tracking-widest ml-1 mb-2 block">Type</label>
+                    <select 
+                      className="input-field h-14"
+                      value={formData.type}
+                      onChange={(e) => setFormData({...formData, type: e.target.value})}
+                    >
+                      <option value="income">Credit (+)</option>
+                      <option value="expense">Debit (-)</option>
+                    </select>
+                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-6">
+                <div>
+                   <label className="text-[10px] font-black text-text-dim uppercase tracking-widest ml-1 mb-2 block">Category</label>
+                   <input
+                     type="text"
+                     className="input-field h-14"
+                     placeholder="Education, Rent..."
+                     value={formData.category}
+                     onChange={(e) => setFormData({...formData, category: e.target.value})}
+                     required
+                   />
+                </div>
+                <div>
+                   <label className="text-[10px] font-black text-text-dim uppercase tracking-widest ml-1 mb-2 block">Execution Date</label>
+                   <input
+                     type="date"
+                     className="input-field h-14"
+                     value={formData.date}
+                     onChange={(e) => setFormData({...formData, date: e.target.value})}
+                     required
+                   />
+                </div>
               </div>
 
               <div>
-                <label className="block text-sm text-text-dim mb-1">Type</label>
-                <select 
-                  className="input-field"
-                  value={formData.type}
-                  onChange={(e) => setFormData({...formData, type: e.target.value})}
-                >
-                  <option value="income">Income</option>
-                  <option value="expense">Expense</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm text-text-dim mb-1">Category</label>
-                <input
-                  type="text"
-                  className="input-field"
-                  placeholder="e.g. Salary, Utilities"
-                  value={formData.category}
-                  onChange={(e) => setFormData({...formData, category: e.target.value})}
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm text-text-dim mb-1">Date</label>
-                <input
-                  type="date"
-                  className="input-field"
-                  value={formData.date}
-                  onChange={(e) => setFormData({...formData, date: e.target.value})}
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm text-text-dim mb-1">Notes</label>
+                <label className="text-[10px] font-black text-text-dim uppercase tracking-widest ml-1 mb-2 block">Notes / Description</label>
                 <textarea
-                  className="input-field h-20 resize-none"
+                  className="input-field h-24 resize-none p-4"
+                  placeholder="Record additional details..."
                   value={formData.notes}
                   onChange={(e) => setFormData({...formData, notes: e.target.value})}
                 />
               </div>
 
-              <div className="pt-4 flex space-x-3">
+              <div className="pt-6 flex space-x-4">
                 <button 
                   type="button" 
                   onClick={() => setIsModalOpen(false)}
-                  className="flex-1 px-4 py-3 rounded-xl border border-white/10 text-white hover:bg-white/5 transition-all font-medium"
+                  className="flex-1 h-14 rounded-2xl border border-white/5 text-xs font-black uppercase tracking-widest hover:bg-white/5 transition-all text-text-dim"
                 >
-                  Cancel
+                  Discard
                 </button>
-                <button type="submit" className="flex-1 btn-primary">
-                   {editingId ? "Update" : "Create"}
+                <button type="submit" className="flex-1 btn-primary h-14">
+                   {editingId ? "Commit Changes" : "Create Transaction"}
                 </button>
               </div>
             </form>

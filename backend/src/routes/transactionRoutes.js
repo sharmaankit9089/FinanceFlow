@@ -13,8 +13,8 @@ const { protect, authorize } = require("../middleware/authMiddleware");
 // Create (only admin)
 router.post("/", protect, authorize("admin"), createTransaction);
 
-// Get Records (viewers, analyst + admin)
-router.get("/", protect, authorize("viewer", "analyst", "admin"), getTransactions);
+// Get Records (restricted to analyst and admin per new spec)
+router.get("/", protect, authorize("analyst", "admin"), getTransactions);
 
 // Update (admin only)
 router.put("/:id", protect, authorize("admin"), updateTransaction);

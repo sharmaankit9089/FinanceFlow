@@ -26,7 +26,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Login />} />
 
-        {/* Dashboard/Basic Charts is for Everyone (Viewer, Analyst, Admin) */}
+        {/* Dashboard is the base access for Everyone */}
         <Route
           path="/dashboard"
           element={
@@ -36,17 +36,17 @@ function App() {
           }
         />
 
-        {/* Both Viewer and Analyst/Admin can view records */}
+        {/* View records is restricted to Analyst and Admin only per new spec */}
         <Route
           path="/transactions"
           element={
-            <ProtectedRoute roles={["viewer", "analyst", "admin"]}>
+            <ProtectedRoute roles={["analyst", "admin"]}>
               <Transactions />
             </ProtectedRoute>
           }
         />
 
-        {/* Analytics deep analysis is for Analyst and Admin only */}
+        {/* Analytics (Insights) is for Analyst and Admin only */}
         <Route
           path="/analytics"
           element={
