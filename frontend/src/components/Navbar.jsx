@@ -5,7 +5,8 @@ function Navbar() {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const location = useLocation();
 
-  if (!token) return null;
+  // Hide Navbar on Login page or if user is not authenticated
+  if (!token || location.pathname === "/") return null;
 
   const isViewer = user.role === "viewer";
   const isAnalyst = user.role === "analyst";
@@ -78,7 +79,7 @@ function Navbar() {
       </div>
 
       <div className="flex items-center space-x-6">
-        {/* Profile Circle - Ultra Light Blue with Highlighted Border */}
+        {/* Profile Circle with Role below */}
         <div className="flex flex-col items-center">
           <div className="h-10 w-10 rounded-full bg-blue-500/5 border-2 border-blue-400 flex items-center justify-center text-blue-500 font-black text-xl shadow-[0_0_15px_rgba(56,189,248,0.2)] transform transition-transform hover:scale-110 cursor-default">
             {user.name?.charAt(0).toUpperCase()}

@@ -152,7 +152,6 @@ function Transactions() {
               </select>
            </div>
 
-           {/* Sort Toggle is in headers, so this space can be used for secondary filters or left clean */}
            <div className="md:col-span-3">
              <div className="h-14 flex items-center justify-end px-2">
                 <span className="text-[10px] text-text-dim uppercase font-black tracking-widest bg-white/5 px-4 py-2 rounded-lg border border-white/10">
@@ -165,11 +164,11 @@ function Transactions() {
 
       <div className="glass-card overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full text-left border-collapse table-fixed">
             <thead>
               <tr className="bg-white/5 border-b border-white/10">
                 <th 
-                  className="p-5 text-text-dim font-black text-[10px] tracking-widest uppercase cursor-pointer hover:text-white transition-all group"
+                  className="w-[15%] p-5 text-text-dim font-black text-[10px] tracking-widest uppercase cursor-pointer hover:text-white transition-all group"
                   onClick={() => handleSort('date')}
                 >
                   <div className="flex items-center space-x-1">
@@ -178,7 +177,7 @@ function Transactions() {
                   </div>
                 </th>
                 <th 
-                  className="p-5 text-text-dim font-black text-[10px] tracking-widest uppercase cursor-pointer hover:text-white transition-all"
+                  className="w-[20%] p-5 text-text-dim font-black text-[10px] tracking-widest uppercase cursor-pointer hover:text-white transition-all"
                   onClick={() => handleSort('category')}
                 >
                   <div className="flex items-center space-x-1">
@@ -186,9 +185,9 @@ function Transactions() {
                     {sortBy === 'category' && (<span>{order === -1 ? '↓' : '↑'}</span>)}
                   </div>
                 </th>
-                <th className="p-5 text-text-dim font-black text-[10px] tracking-widest uppercase">TYPE</th>
+                <th className="w-[15%] p-5 text-text-dim font-black text-[10px] tracking-widest uppercase">TYPE</th>
                 <th 
-                  className="p-5 text-text-dim font-black text-[10px] tracking-widest uppercase cursor-pointer hover:text-white transition-all text-right"
+                  className="w-[20%] p-5 text-text-dim font-black text-[10px] tracking-widest uppercase cursor-pointer hover:text-white transition-all text-right"
                   onClick={() => handleSort('amount')}
                 >
                    <div className="flex items-center justify-end space-x-1">
@@ -196,18 +195,18 @@ function Transactions() {
                     {sortBy === 'amount' && (<span>{order === -1 ? '↓' : '↑'}</span>)}
                   </div>
                 </th>
-                <th className="p-5 text-text-dim font-black text-[10px] tracking-widest uppercase">POSTED BY</th>
-                {isAdmin && <th className="p-5 text-text-dim font-black text-[10px] tracking-widest uppercase text-center">ACTIONS</th>}
+                <th className="w-[20%] p-5 text-text-dim font-black text-[10px] tracking-widest uppercase pl-10">POSTED BY</th>
+                {isAdmin && <th className="w-[10%] p-5 text-text-dim font-black text-[10px] tracking-widest uppercase text-center">ACTIONS</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
               {data.map((t) => (
                 <tr key={t._id} className="hover:bg-white/[0.03] transition-colors group">
-                  <td className="p-5 text-sm text-white">
+                  <td className="p-5 text-sm text-white whitespace-nowrap">
                     {t.date ? new Date(t.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : "--"}
                   </td>
                   <td className="p-5">
-                    <span className="p-1.5 px-4 rounded-lg bg-indigo-500/5 text-xs text-indigo-400 font-bold border border-indigo-500/10">
+                    <span className="p-1.5 px-4 rounded-lg bg-indigo-500/5 text-xs text-indigo-400 font-bold border border-indigo-500/10 whitespace-nowrap">
                       {t.category}
                     </span>
                   </td>
@@ -219,9 +218,9 @@ function Transactions() {
                   <td className={`p-5 text-sm font-black text-right ${t.type === 'income' ? 'text-green-500' : 'text-white'}`}>
                     ₹{t.amount?.toLocaleString()}
                   </td>
-                  <td className="p-5">
-                    <div className="text-sm font-bold text-white">{t.user?.name || 'Admin'}</div>
-                    <div className="text-[10px] text-text-dim uppercase font-bold">{t.user?.email}</div>
+                  <td className="p-5 pl-10">
+                    <div className="text-sm font-bold text-white truncate">{t.user?.name || 'Admin'}</div>
+                    <div className="text-[11px] text-text-dim lowercase tracking-tight truncate">{t.user?.email}</div>
                   </td>
                   {isAdmin && (
                     <td className="p-5 text-center">
@@ -256,29 +255,29 @@ function Transactions() {
 
         {/* Bottom Pagination */}
         <div className="p-5 bg-white/[0.02] border-t border-white/5 flex items-center justify-between">
-           <div className="text-[10px] text-text-dim font-black uppercase tracking-widest">
-              Ledger Page {page} of {totalPages}
+           <div className="text-[11px] text-text-dim font-black uppercase tracking-widest">
+              Page {page} of {totalPages}
            </div>
-           <div className="flex space-x-3">
+           <div className="flex space-x-4">
               <button 
                 disabled={page <= 1}
                 onClick={() => setPage(p => p - 1)}
-                className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border border-white/10 transition-all ${page <= 1 ? "opacity-20 cursor-not-allowed grayscale" : "hover:bg-white text-slate-900 bg-white/5 text-white"}`}
+                className={`h-10 w-10 flex items-center justify-center rounded-full border border-white/10 transition-all ${page <= 1 ? "opacity-20 cursor-not-allowed" : "hover:bg-white hover:text-slate-950 bg-white/5 text-white"}`}
               >
-                Previous
+                <span className="text-lg">❮</span>
               </button>
               <button 
                 disabled={page >= totalPages}
                 onClick={() => setPage(p => p + 1)}
-                className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border border-white/10 transition-all ${page >= totalPages ? "opacity-20 cursor-not-allowed grayscale" : "hover:bg-white text-slate-900 bg-white/5 text-white"}`}
+                className={`h-10 w-10 flex items-center justify-center rounded-full border border-white/10 transition-all ${page >= totalPages ? "opacity-20 cursor-not-allowed" : "hover:bg-white hover:text-slate-950 bg-white/5 text-white"}`}
               >
-                Next Ledger
+                <span className="text-lg">❯</span>
               </button>
            </div>
         </div>
       </div>
 
-      {/* Modal - Modernized */}
+      {/* Modal remains consistent */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-950/80 backdrop-blur-md">
           <div className="glass-card p-10 w-full max-w-lg animate-in zoom-in-95 duration-200 relative border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)]">

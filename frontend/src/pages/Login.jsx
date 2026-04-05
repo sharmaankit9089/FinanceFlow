@@ -16,12 +16,7 @@ function Login() {
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user)); 
       
-      const role = res.data.user.role;
-      if (role === "viewer") {
-        window.location.href = "/transactions";
-      } else {
-        window.location.href = "/dashboard";
-      }
+      window.location.href = "/dashboard";
     } catch (err) {
       setError(err.response?.data?.message || "Invalid credentials");
     }
@@ -47,7 +42,7 @@ function Login() {
             <label className="block text-sm font-medium text-text-dim mb-2 ml-1">Email Address</label>
             <input
               type="email"
-              placeholder="name@company.com"
+              placeholder="ankit@admin.com"
               className="input-field"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -59,7 +54,7 @@ function Login() {
             <label className="block text-sm font-medium text-text-dim mb-2 ml-1">Password</label>
             <input
               type="password"
-              placeholder="••••••••"
+              placeholder="123456"
               className="input-field"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -82,8 +77,8 @@ function Login() {
         </form>
 
         <div className="mt-8 pt-8 border-t border-white/5 text-center">
-          <p className="text-sm text-text-dim">
-            Demo Account: admin@test.com / 123456
+          <p className="text-sm text-text-dim px-4 py-2 bg-white/5 rounded-lg border border-white/5 inline-block font-mono">
+            Demo: <span className="text-white">ankit@admin.com</span> / <span className="text-white">123456</span>
           </p>
         </div>
       </div>
